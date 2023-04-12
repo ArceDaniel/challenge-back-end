@@ -7,6 +7,7 @@ import * as jwt from "jsonwebtoken";
 import { UserDto } from "../DTO/user.dto";
 import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
+import { TokenPayloadDto } from "../DTO";
 dotenv.config();
 
 export class UserController {
@@ -71,6 +72,42 @@ export class UserController {
       return res.status(500).json({ message: "Internal server error" });
     }
   }
+
+  async list(req: Request, res: Response) {
+    try {
+      const users = await this.userRepository.list();
+      return res.status(200).json({ message: "Users listed", users });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  async remove (req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+      const user = await this.userRepository.findOf({ where: { id } });
+      if (!user) return res.status(400).json({ message: "User does not exist" });
+      await this.userRepository.remove(id);
+      return res.status(200).json({ message: "User removed" });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  async listOne(req: Request & {tkn:  TokenPayloadDto}, res: Response) {
+    const { id } = req.tkn;
+    try {
+      const user = await this.userRepository.findOf({ where: { id } });
+      if (!user) return res.status(400).json({ message: "User does not exist" });
+      return res.status(200).json({ message: "User listed", user });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
 
   private async generateToken(user: User) {
     const token = jwt.sign(

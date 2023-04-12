@@ -10,6 +10,7 @@ export interface DatabaseRepository<T> {
   list(query?: Query): Promise<T[]>;
   get(id: Id, query?: Query): Promise<T>;
   findOf(query?: Query): Promise<T>;
+  count?(query?: Query): Promise<number>;
   update(id: Id, data: T, query?: Query): Promise<T>;
   remove(id: Id, query?: Query): Promise<T>;
 }
