@@ -1,5 +1,4 @@
 import { DataSource } from "typeorm";
-import { join } from "path";
 import dotenv from "dotenv";
 import { User, Event } from "../entities";
 

@@ -3,11 +3,10 @@ import dotenv from "dotenv";
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { createConnection } from "typeorm";
-// import { User } from "./entities/user.entity";
 import dataBase from "./config/ormconfig";
 import rootRoutes from "./routes/index.routes";
 import morgan from "morgan";
+import backup from "./scripts/backupDatabase";
 
 dotenv.config();  
 
@@ -26,6 +25,7 @@ const bootstrap = async () => {
         console.log("Server started on port 3000");
     }
     );
+    backup();   
 }
 
 bootstrap();
