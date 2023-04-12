@@ -1,62 +1,65 @@
-import fs from 'fs-extra';
-import moment from 'moment';
-import { Client, ClientConfig } from 'pg';
-import * as dotenv from 'dotenv';
+import { exec } from 'child_process';
+import { S3 } from 'aws-sdk';
+import { Client } from 'pg';
 
-dotenv.config();
+const s3 = new S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
 
-const backupDir = 'backups';
+const client = new Client({
+  host: process.env.DB_HOST,
+  port: +process.env.DB_PORT,
+  database: process.env.DB_DATABASE,
+  user: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+});
 
-const {
-  DB_HOST,
-  DB_PORT,
-  DB_USERNAME,
-  DB_PASSWORD,
-  DB_DATABASE,
-} = process.env;
+async function backup() {
+  await client.connect();
 
-const connectionOptions = {
-  host: DB_HOST,
-  port: Number(DB_PORT),
-  user: DB_USERNAME,
-  password: DB_PASSWORD,
-  database: DB_DATABASE,
-};
+  const { rows } = await client.query(`SELECT current_date`);
+  const currentDate = rows[0].current_date.toISOString().split('T')[0].replace(/-/g, '');
+  const currentTime = new Date().toISOString().split('T')[1].split('.')[0].replace(/:/g, '');
 
-console.log('connectionOptions', connectionOptions);
+  const backupFileName = `${process.env.PROJECT_NAME || "tarea"}${process.env.DB_DATABASE}-${currentDate}.${currentTime}.sql`;
+  const backupFilePath = `./backups/${backupFileName}`;
 
+  exec(`pg_dump -U ${process.env.DB_USERNAME} -h ${process.env.DB_HOST} -p ${process.env.DB_PORT} ${process.env.DB_DATABASE} > ${backupFilePath}`, async (err, stdout, stderr) => {
+    if (err) {
+      console.error(`Error executing backup: ${err}`);
+      return;
+    }
 
-const pgClient = new Client(connectionOptions as ClientConfig);
+    console.log(`Backup completed successfully: ${backupFilePath}`);
 
-const backup = async () => {
-  try {
-    // Obtener la fecha actual y darle el formato necesario
-    const now = moment().format('YYYYMMDD.HHmmss');
+    const backupFileContent = await new Promise<Buffer>((resolve, reject) => {
+      const stream = require('fs').createReadStream(backupFilePath);
+      const chunks: Uint8Array[] = [];
 
-    // Nombre del archivo de backup
-    const filename = `${DB_DATABASE}-${now}.backup`;
+      stream.on('data', (chunk: Uint8Array) => {
+        chunks.push(chunk);
+      });
 
-    // Comando para crear el archivo de backup
-    const backupCommand = `pg_dump -F c -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -f ${filename} ${DB_DATABASE}`;
+      stream.on('error', (err: Error) => {
+        reject(err);
+      });
 
-    console.log(`Creating backup: ${backupCommand}`);
+      stream.on('end', () => {
+        resolve(Buffer.concat(chunks));
+      });
+    });
 
-    // Ejecutar el comando para crear el archivo de backup
-    await pgClient.connect();
-    await pgClient.query(backupCommand);
+    const uploadResult = await s3.upload({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: backupFileName,
+      Body: backupFileContent,
+    }).promise();
 
-    // Crear la carpeta de backups si no existe 
-    await fs.ensureDir(backupDir);
+    console.log(`Backup uploaded to S3: ${uploadResult.Location}`);
 
-    // Mover el archivo de backup a la carpeta correspondiente
-    await fs.move(filename, `${backupDir}/${filename}`);
-
-    console.log(`Backup successful: ${filename}`);
-  } catch (err) {
-    console.error('Backup failed:', err);
-  } finally {
-    await pgClient.end();
-  }
-};
+    await client.end();
+  });
+}
 
 export default backup;

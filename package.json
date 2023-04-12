@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/storage": "^6.9.5",
     "aws-sdk": "^2.1356.0",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",
