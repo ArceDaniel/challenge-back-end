@@ -4,12 +4,22 @@ import { User } from "../entities/user.entity";
 import { DatabaseRepository } from "../declarations";
 import dotenv from "dotenv";
 import * as jwt from "jsonwebtoken";
+import { UserDto } from "../DTO/user.dto";
+import { plainToClass } from "class-transformer";
+import { validate } from "class-validator";
 dotenv.config();
 
 export class UserController {
   constructor(private userRepository: DatabaseRepository<User>) {}
   async register(req: Request, res: Response) {
-    const { email, password } = req.body;
+    const userDto = plainToClass(UserDto, req.body);
+
+    const errors = await validate(userDto);
+    if (errors.length > 0) {
+      return res.status(400).json(errors.map((err) => err.constraints));
+    }
+
+    const { email, password } = userDto;
     try {
       const existingUser = await this.userRepository.findOf({
         where: { email },

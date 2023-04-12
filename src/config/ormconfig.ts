@@ -1,7 +1,7 @@
 import { DataSource } from "typeorm";
 import { join } from "path";
 import dotenv from "dotenv";
-import { User } from "../entities/user.entity";
+import { User, Event } from "../entities";
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  entities: [User],
+  entities: [User, Event],
 
   // Sincronizar la base de datos con los modelos de entidades
   synchronize: true,

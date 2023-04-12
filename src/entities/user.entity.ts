@@ -1,13 +1,18 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from "typeorm";
+import { Event } from "./event.entity";
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
-    id: number;
-    
-    @Column()
-    email: string;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-    @Column()
-    password: string;
-    }   
+  @Column("text", { unique: true, nullable: true })
+  email: string;
+
+  @Column("text")
+  password: string;
+
+  @OneToMany(() => Event, (event) => event.user)
+    events: Event[];
+
+}
