@@ -47,7 +47,14 @@ export class UserController {
   }
 
   async login(req: Request, res: Response) {
-    const { email, password } = req.body;
+    const userDto = plainToClass(UserDto, req.body);
+
+    const errors = await validate(userDto);
+    if (errors.length > 0) {
+      return res.status(400).json(errors.map((err) => err.constraints));
+    }
+
+    const { email, password } = userDto;
     try {
       const user = await this.userRepository.findOf({
         where: { email },

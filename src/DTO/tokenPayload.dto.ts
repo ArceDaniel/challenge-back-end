@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty } from "class-validator";
 
-export default class TokenPayloadDto {
+export class TokenPayloadDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
@@ -8,3 +8,5 @@ export default class TokenPayloadDto {
   @IsNotEmpty()
   id: string;   
 }
+
+export default TokenPayloadDto;
