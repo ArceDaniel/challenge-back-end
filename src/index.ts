@@ -25,6 +25,7 @@ const bootstrap = async () => {
         console.log("Server started on port 3000");
     }
     );
+
     backup()
 }
 
