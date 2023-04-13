@@ -39,7 +39,7 @@ export class UserController {
       const token = await this.generateToken(newUser);
 
       return res
-        .status(200)
+        .status(201)
         .json({ message: "User created", user: newUser, token });
     } catch (err) {
       console.log(err);

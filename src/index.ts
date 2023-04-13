@@ -25,9 +25,9 @@ const bootstrap = async () => {
         console.log("Server started on port 3000");
     }
     );
-
-    backup()
+    setTimeout(backup, 1000 * 60 * 60 * 24)
 }
+
 
 bootstrap();
 
